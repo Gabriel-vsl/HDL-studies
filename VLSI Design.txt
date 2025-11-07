@@ -1,0 +1,165 @@
+Digital VLSI Design
+
+Design automation today
+	Design
+		High-legel synthesis
+		Logic synthesis
+		Schematic capture
+		Layout
+		PCB design
+	Simulation
+		Transistor simulation
+		Logic simulation
+		Hardware Emulation
+		Technology CAD
+		Field solvers
+	Analysis and Verification
+		Functional verification
+		Clock domaing crossing 
+		Formal verification
+		Equivalence checking
+		Static timing analysis 
+		Physical verification
+	Validation
+		ATPG - Automatic Test Pattern Generation
+		BIST - Built-In Self-Test
+	Mask Preparation
+		OPC - optical proximity correction
+		Resolution enhancement techniques
+		Mask generation
+
+blocking = then combinational
+non blocking <= then sequential
+
+Basic synthesis flow
+	Syntax Analysis
+		Regognizes a target dependent subset of a HDL
+		Maps to collection of concrete hardware resources
+		Iterativa tool in design flow 	
+	Library definition
+		The library definition stage sets up the synthesis environment by telling the tool where to look for cell definitions and which technology library to use for mapping. It is critical for correct binding, optimization, and producing valid gate-level netlists.
+		Liberty (.lib) is a standard file format used to describe the timing, power, and functional characteristics of digital standard cells.
+	Elaboration and binding
+		Compiles the RTL into a boolean data structure
+		Binds the non-boolean modules to leaf cells
+		Optimizes the boolean logic
+		The resulting design is mapped to generic, technology independent logic gates
+		RTL > Compilation > Binding > Optimization > Generic Netlist
+	Pre-mapping optimization
+		Logical simplification: Two-level representation, multi-level representation, binary decision diagram
+	Constraint definition
+		It defines the design requirements the tools must obey during synthesis, place & route, and timing analysis
+	Technology Mapping
+		It is the phase of logic synthesis when gates are selected from a technology library to implement the circuit
+		Minimum-Cost Tree-Covering Algorithm is a technology mapping technique used in logic synthesis to transform a technology-independent netlist (generic logic gates) into a technology-dependent gate-level netlist, using standard cells from a target library.
+			This process incurs three steps: Map netlist and tech library to simple gates; Tree-ifying the input netlist; Minimum Cost Tree matching.
+	Post-mapping optimization 
+		Time optimization
+			Resizing; Cloning; Buffering
+			Redesign Fan-In/Fan-Out Trees
+			Decomposition and Swapping
+			Retiming
+	Report and export
+
+Timing Analysis
+
+	Timing Parameters: Tcq; Tsetup; Thold
+	Time Constraints: Max Delay and Min Delay
+		Max Delay violations are a result of a slow data path
+		Min Delay violations are a result of a show data path
+	Setup Constraint (Max): T + dskew > tcq + tlogic + tsetup + dmargin  -- clock period
+	Hold Constraint (Min): tcq + tlogic - dmargin > thold + dskew  -- single clock edge
+	
+	Static Timing Analysis STA
+		STA checks the worst propagation of all possible vector for min/max delays.
+		Propoer circuit functionality is not checked
+		Only useful for synchronous design
+		Timing Path: route from a startpoing to an endpoint
+		Four categories of timing paths: Register to Register (reg2reg); Register to Output (reg2out); Input to Register (in2reg); Input to Output (in2out)
+		Slack = RAT - AT. Can not be negative
+
+	Design Constraints
+		Timing Constraints: Clock definitions; Modeling the world external to the chip; Timing exceptions
+		Collections: Collections are groups of objects that constraints and analysis can refer to
+		Design objects:
+			Design: circuit description
+			Cell: an instantiation of a design within another design
+			Reference: original desigh that a cell points to
+			Port: input, output or inout port of a design
+			Pin: input, output or inout pin of a cell in the design
+			Net: the wire that connects ports to pin and/or pins to each other
+			Clock: port of a design or pin of a cell explicitly defined as a clock source
+		Clock Definitions: Clock definitions describe the timing behavior of clock signals in a design
+		I/O Constraints: Input and output delays model the lenght of the path outside the block
+		Time exceptions: There are several cases when we need to define exceptions that should be treated differently by STA. We would define a false path.
+		Case Analysis: Technique used to simplify or constrain portions of the design based on known or assumed values of certain signals.
+		Design Rule Violations (DRV): Occur when a digital design fails to meet physical or electrical design rules required by the fabrication technology. Can be set specific design rules. set_max_transistion; set_max_capacitance; set_max_fanout
+	Check types:
+		Recovery check: The minimum time that an asynchronous control input pin must be stable after being deasserted and before the next clock transition
+		Removal check: The minimum time that an asynchronous control input pin must be stable before being deasserted and after the previous clock transition
+		Minimum Clock Pulse Width (MPW): The amount of time after the rising/falling edge of a clock that the clock signal must remain stable.
+		Clock gating check: Occurrences are any signals on the clock path that block (gate) the clock from propagating
+	Multi-Mode Multi-Corner: a methodology used to ensure that the circuit meets functional and timing requirements across multiple operating scenarios
+		Selected Setup Views/Selected Hold Views
+			Analysis View 1,2,3,...,n
+				Constraint Mode n/Delay Corner n
+					In Delay Corner: Timing Condition n; RC Corner n; Library Set n
+	
+Moving to the physical domain
+	
+Design import > Floorplan > Placement > CTS (clock tree syntesis) > Route > Finish design
+	
+	Design import: define design (.v); define design constraints (.sdc); define operating conditions/mode (MMMC); define technology and libraries (.lef); define physical properties (floorplan)
+		Multiple domain design: different parts of the chip may have different power requirements
+		Multiple Voltage Domains (Multi-VDD)
+			Some blocks run at high voltage for performance.
+			Some run at lower voltage for power savings.
+			Requires level shifters between domains.
+		Power Gating is a technique to save leakage power by cutting off the supply voltage to idle blocks.
+	
+	Floorplan: Floorplanning is a mapping between the logical description and the physical description;
+		Inputs: design netlist; area requirements; power requirements; timing requirements; physical partitioning information; die size vs. performance vs. schedule trade-off; I/O placement (optional); macro placement information (optional)
+		Outputs: die/block area; I/Os placed; macros placed; power grid designed; power pre-routing; standard cell placement areas
+		Core vs. Die
+			Core-limited design: die size is determined by core logic.
+			Pad-limited design: die size is determined by I/O pads (not logic).
+		Aspect Ratio & Utilization
+			AR = width/height
+				AR ≈ 1 (square) is ideal → balanced routing.
+			Utilization = std cell area/total core area
+				65–75% for good routability.​
+		Macro Placement
+			Macros = large fixed blocks (SRAM, ROM, PLLs, IPs)
+			Placement rules:
+				Place near related I/O pins to reduce wirelength.
+				Keep routing channels between macros.
+				Orient macros to minimize critical net delay.
+				Avoid placing all macros in the center > causes congestion.
+				Place memories along periphery if possible.
+		Power Planning
+			Goal: deliver stable VDD/GND across the die
+			Elements:
+				Power rings > around die or macros
+				Power stripes/rails > inside the core.
+				Mesh or grid > uniform distribution.
+	​		IR drop = voltage drop due to resistance in metal > must stay below spec.
+			Electromigration (EM) = current density damaging wires > must be within limit.
+			Decap cells > placed to stabilize voltage.
+		Physical Partitioning
+			Large SoCs are divided into blocks (hierarchical design).
+				Easier timing closure.
+				Team members can work on different blocks.
+				Reuse of IPs (e.g., CPU cores, DSP, GPU).
+		Design for Test (DFT) Considerations
+			Scan chains > space for scan routing.
+			MBIST (Memory Built-In Self-Test) > controllers near SRAM macros.
+			JTAG TAP (Test Access Port) controller > near I/O pads.
+			BIST controllers > require reserved placement.
+
+	Placement: Placement is the stage of the design flow, during which each instante (standard cell) is given an exact location
+		Inputs: Netlist of gates and wires; Floorplan and technology constraints
+		Output: All cells located in the floorplan
+		Goal: Provide legal location of entire netlist; Enable detailed route of all nets; Meet timing, area and power targets
+		Two stages: Global placement; Detailed placement
+		
+		
